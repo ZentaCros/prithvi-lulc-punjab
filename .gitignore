@@ -60,6 +60,9 @@ desktop.ini
 *.fdb_latexmk
 *.synctex.gz
 
+# Cloned repos
+greenwatch-temp/
+
 # Misc
 *.log
 *.tmp
