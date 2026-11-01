@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deforestation Analysis — LULC Punjab</title>
+    <meta name="description" content="Side-by-side comparison of vegetation loss in Lahore and Gujranwala, Punjab (2018 vs 2026).">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+
+    <style>
+        /* ── Page-specific overrides ── */
+        #app {
+            flex-direction: column;
+        }
+
+        /* ── Controls bar ── */
+        #controls-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            padding: 12px 20px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        #controls-bar .toggle-group {
+            width: auto;
+        }
+
+        #controls-bar .toggle-btn {
+            padding: 8px 20px;
+        }
+
+        .control-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .layer-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 6px 14px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 20px;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            color: #ef4444;
+            transition: var(--transition);
+        }
+
+        .layer-toggle:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        .layer-toggle.active {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: rgba(239, 68, 68, 0.6);
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
+        }
+
+        .layer-toggle .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+            transition: var(--transition);
+        }
+
+        .layer-toggle.active .dot {
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        /* ── Maps row ── */
+        #maps-row {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .map-panel {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .map-panel:first-child {
+            border-right: 2px solid var(--accent);
+        }
+
+        .map-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            z-index: 500;
+        }
+
+        .map-panel-header h3 {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .map-panel-header .year-badge {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 3px 12px;
+            border-radius: 12px;
+            color: white;
+        }
+
+        .year-badge.y2018 {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        }
+        .year-badge.y2026 {
+            background: linear-gradient(135deg, #ef4444, #f97316);
+        }
+
+        .map-instance {
+            flex: 1;
+        }
+
+        /* ── Divider label ── */
+        #divider-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 900;
+            background: var(--bg-card);
+            border: 1px solid var(--accent);
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent);
+            backdrop-filter: blur(12px);
+            pointer-events: none;
+            letter-spacing: 1px;
+        }
+
+        /* ── Bottom stats bar ── */
+        #stats-bar {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+            height: 110px;
+        }
+
+        .stats-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            border-right: 1px solid var(--border);
+        }
+
+        .stats-section:last-child { border-right: none; }
+
+        .stats-section .big-number {
+            font-size: 28px;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+
+        .stats-section .big-number.loss { color: var(--red); }
+        .stats-section .big-number.gain { color: var(--green); }
+        .stats-section .big-number.neutral { color: var(--accent); }
+
+        .stats-section .stats-label {
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        .stats-section .stats-detail {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        /* ── Deforestation legend ── */
+        #defo-legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 800;
+            background: var(--bg-card);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            backdrop-filter: blur(16px);
+        }
+
+        #defo-legend h4 {
+            font-size: 10px;
+            font-weight: 600;
+            color: #ef4444;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .defo-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .defo-legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        /* ── Nav link on main page ── */
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #ef4444;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .nav-link:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ─── TOP NAV ─── -->
+    <nav id="topnav">
+        <div class="nav-left">
+            <div class="nav-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                </div>
+                <div class="nav-title">
+                    <h1>Deforestation Analysis</h1>
+                    <span class="nav-subtitle">Side-by-side 2018 vs 2026 comparison</span>
+                </div>
+            </div>
+        </div>
+        <div class="nav-right">
+            <a href="index.html" class="nav-link" style="color: var(--accent); background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.25);">
+                &larr; Back to Dashboard
+            </a>
+        </div>
+    </nav>
+
+    <!-- ─── MAIN ─── -->
+    <main id="app">
+
+        <!-- Controls bar -->
+        <div id="controls-bar">
+            <span class="control-label">City</span>
+            <div class="toggle-group" id="city-toggle">
+                <button class="toggle-btn active" data-city="lahore">Lahore</button>
+                <button class="toggle-btn" data-city="gujranwala">Gujranwala</button>
+            </div>
+
+            <span class="control-label" style="margin-left: 16px;">Layer</span>
+            <button class="layer-toggle active" id="defo-toggle">
+                <span class="dot"></span>
+                Deforestation Highlight
+            </button>
+
+            <span class="control-label" style="margin-left: 16px;">Map Opacity</span>
+            <input type="range" id="map-opacity-slider" min="0" max="100" value="75" style="width:100px; accent-color: var(--accent); cursor: pointer;">
+
+            <span class="control-label" style="margin-left: 16px;">Highlight Opacity</span>
+            <input type="range" id="defo-opacity-slider" min="0" max="100" value="85" style="width:100px; accent-color: #ef4444; cursor: pointer;">
+        </div>
+
+        <!-- Maps -->
+        <div id="maps-row">
+            <div class="map-panel">
+                <div class="map-panel-header">
+                    <h3>Before</h3>
+                    <span class="year-badge y2018">2018</span>
+                </div>
+                <div id="map-left" class="map-instance"></div>
+            </div>
+
+            <div id="divider-label">VS</div>
+
+            <div class="map-panel">
+                <div class="map-panel-header">
+                    <h3>After</h3>
+                    <span class="year-badge y2026">2026</span>
+                </div>
+                <div id="map-right" class="map-instance"></div>
+
+                <!-- Deforestation legend (on the right map) -->
+                <div id="defo-legend">
+                    <h4>Vegetation Change</h4>
+                    <div class="defo-legend-item">
+                        <span class="defo-legend-color" style="background: rgb(34, 197, 94)"></span>
+                        Still Vegetation
+                    </div>
+                    <div class="defo-legend-item">
+                        <span class="defo-legend-color" style="background: rgb(239, 68, 68)"></span>
+                        &rarr; Built-up
+                    </div>
+                    <div class="defo-legend-item">
+                        <span class="defo-legend-color" style="background: rgb(234, 179, 8)"></span>
+                        &rarr; Cropland
+                    </div>
+                    <div class="defo-legend-item">
+                        <span class="defo-legend-color" style="background: rgb(59, 130, 246)"></span>
+                        &rarr; Water
+                    </div>
+                    <div class="defo-legend-item">
+                        <span class="defo-legend-color" style="background: rgb(210, 180, 140)"></span>
+                        &rarr; Barren
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats bar -->
+        <div id="stats-bar">
+            <div class="stats-section" id="stat-total-veg"></div>
+            <div class="stats-section" id="stat-veg-lost"></div>
+            <div class="stats-section" id="stat-to-buildup"></div>
+            <div class="stats-section" id="stat-to-cropland"></div>
+            <div class="stats-section" id="stat-pct-lost"></div>
+        </div>
+    </main>
+
+    <script>
+    /* ═══════════════════════════════════════════════════════════════
+       COMPARISON PAGE LOGIC
+       ═══════════════════════════════════════════════════════════════ */
+
+    const BOUNDS = {
+        lahore: { south: 31.197574693647738, west: 74.09511449763578, north: 31.702420353581598, east: 74.55242942457797 },
+        gujranwala: { south: 31.907053619803197, west: 73.94921941181867, north: 32.41299282185118, east: 74.4083481382861 },
+    };
+
+    const OVERLAYS = {
+        lahore: {
+            lulc2018: "../results/pipeline/lahore/web_lahore_2018.png",
+            lulc2026: "../results/pipeline/lahore/web_lahore_2026.png",
+            defo:     "../results/pipeline/lahore/web_deforestation_lahore.png",
+            base2018: "../results/pipeline/lahore/web_basemap_lahore_2018.webp",
+            base2026: "../results/pipeline/lahore/web_basemap_lahore_2026.webp",
+        },
+        gujranwala: {
+            lulc2018: "../results/pipeline/gujranwala/web_gujranwala_2018.png",
+            lulc2026: "../results/pipeline/gujranwala/web_gujranwala_2026.png",
+            defo:     "../results/pipeline/gujranwala/web_deforestation_gujranwala.png",
+            base2018: "../results/pipeline/gujranwala/web_basemap_gujranwala_2018.webp",
+            base2026: "../results/pipeline/gujranwala/web_basemap_gujranwala_2026.webp",
+        }
+    };
+
+    const DEFO_STATS = {
+        lahore: {
+            veg_2018_px: 7932267, still_veg_px: 5708092, lost_px: 2224175, pct_lost: 28.0,
+            to_buildup: 636867, to_cropland: 1346194, to_water: 30675, to_barren: 210439,
+        },
+        gujranwala: {
+            veg_2018_px: 6162663, still_veg_px: 5356361, lost_px: 806302, pct_lost: 13.1,
+            to_buildup: 254520, to_cropland: 514832, to_water: 2798, to_barren: 34152,
+        },
+    };
+
+    const PX_TO_KM2 = 100 / 1e6;  // 10m pixel = 100 m2
+
+    let currentCity = "lahore";
+    let mapLeft, mapRight;
+    let overlayLeft, overlayRight, defoOverlay;
+    let basemapLeft, basemapRight;
+    let showDefo = true;
+    let syncing = false;
+
+    function getBounds(city) {
+        const b = BOUNDS[city];
+        return [[b.south, b.west], [b.north, b.east]];
+    }
+
+    function initMaps() {
+        const b = BOUNDS[currentCity];
+        const center = [(b.south + b.north) / 2, (b.west + b.east) / 2];
+
+        mapLeft = L.map("map-left", { center, zoom: 11, zoomControl: false, attributionControl: false });
+        mapRight = L.map("map-right", { center, zoom: 11, zoomControl: true, attributionControl: false });
+
+        // Sync maps
+        function syncMap(source, target) {
+            source.on("move", () => {
+                if (syncing) return;
+                syncing = true;
+                target.setView(source.getCenter(), source.getZoom(), { animate: false });
+                syncing = false;
+            });
+        }
+        syncMap(mapLeft, mapRight);
+        syncMap(mapRight, mapLeft);
+
+        updateOverlays();
+    }
+
+    function updateOverlays() {
+        const bounds = getBounds(currentCity);
+        const paths = OVERLAYS[currentCity];
+
+        // Remove existing overlays
+        if (overlayLeft)  mapLeft.removeLayer(overlayLeft);
+        if (overlayRight) mapRight.removeLayer(overlayRight);
+        if (defoOverlay)  mapRight.removeLayer(defoOverlay);
+        if (basemapLeft)  mapLeft.removeLayer(basemapLeft);
+        if (basemapRight) mapRight.removeLayer(basemapRight);
+
+        // Basemaps (always 100% opacity, below LULC predictions)
+        basemapLeft = L.imageOverlay(paths.base2018, bounds, { opacity: 1.0 }).addTo(mapLeft);
+        basemapRight = L.imageOverlay(paths.base2026, bounds, { opacity: 1.0 }).addTo(mapRight);
+
+        // Map opacity value
+        const mapOpacity = document.getElementById("map-opacity-slider").value / 100;
+
+        // 2018 LULC on left
+        overlayLeft = L.imageOverlay(paths.lulc2018, bounds, { opacity: mapOpacity }).addTo(mapLeft);
+
+        // 2026 LULC on right
+        overlayRight = L.imageOverlay(paths.lulc2026, bounds, { opacity: mapOpacity }).addTo(mapRight);
+
+        // Deforestation highlight on right map
+        if (showDefo) {
+            const defoOpacity = document.getElementById("defo-opacity-slider").value / 100;
+            defoOverlay = L.imageOverlay(paths.defo, bounds, { opacity: defoOpacity }).addTo(mapRight);
+        }
+
+        mapLeft.fitBounds(bounds, { padding: [10, 10] });
+        mapRight.fitBounds(bounds, { padding: [10, 10] });
+    }
+
+    function updateStats() {
+        const s = DEFO_STATS[currentCity];
+
+        document.getElementById("stat-total-veg").innerHTML = `
+            <div class="big-number neutral">${(s.veg_2018_px * PX_TO_KM2).toFixed(0)}</div>
+            <div class="stats-label">Vegetation 2018 (km&sup2;)</div>
+            <div class="stats-detail">${(s.veg_2018_px / 1e6).toFixed(1)}M pixels</div>
+        `;
+
+        document.getElementById("stat-veg-lost").innerHTML = `
+            <div class="big-number loss">&minus;${(s.lost_px * PX_TO_KM2).toFixed(0)}</div>
+            <div class="stats-label">Vegetation Lost (km&sup2;)</div>
+            <div class="stats-detail">${(s.lost_px / 1e3).toFixed(0)}k pixels converted</div>
+        `;
+
+        document.getElementById("stat-to-buildup").innerHTML = `
+            <div class="big-number loss">${(s.to_buildup * PX_TO_KM2).toFixed(0)}</div>
+            <div class="stats-label">Converted to Built-up (km&sup2;)</div>
+            <div class="stats-detail">${((s.to_buildup / s.lost_px) * 100).toFixed(0)}% of total loss</div>
+        `;
+
+        document.getElementById("stat-to-cropland").innerHTML = `
+            <div class="big-number" style="color: var(--gold)">${(s.to_cropland * PX_TO_KM2).toFixed(0)}</div>
+            <div class="stats-label">Converted to Cropland (km&sup2;)</div>
+            <div class="stats-detail">${((s.to_cropland / s.lost_px) * 100).toFixed(0)}% of total loss</div>
+        `;
+
+        document.getElementById("stat-pct-lost").innerHTML = `
+            <div class="big-number loss">${s.pct_lost}%</div>
+            <div class="stats-label">Total Vegetation Loss</div>
+            <div class="stats-detail">2018 &rarr; 2026 (8 years)</div>
+        `;
+    }
+
+    function setupListeners() {
+        document.querySelectorAll("#city-toggle .toggle-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll("#city-toggle .toggle-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                currentCity = btn.dataset.city;
+                updateOverlays();
+                updateStats();
+            });
+        });
+
+        document.getElementById("defo-toggle").addEventListener("click", function() {
+            showDefo = !showDefo;
+            this.classList.toggle("active", showDefo);
+            document.getElementById("defo-legend").style.display = showDefo ? "block" : "none";
+
+            if (showDefo) {
+                const paths = OVERLAYS[currentCity];
+                const defoOpacity = document.getElementById("defo-opacity-slider").value / 100;
+                defoOverlay = L.imageOverlay(paths.defo, getBounds(currentCity), { opacity: defoOpacity }).addTo(mapRight);
+            } else if (defoOverlay) {
+                mapRight.removeLayer(defoOverlay);
+            }
+        });
+
+        // Map Opacity slider
+        document.getElementById("map-opacity-slider").addEventListener("input", e => {
+            const val = e.target.value / 100;
+            if (overlayLeft)  overlayLeft.setOpacity(val);
+            if (overlayRight) overlayRight.setOpacity(val);
+        });
+
+        // Highlight Opacity slider
+        document.getElementById("defo-opacity-slider").addEventListener("input", e => {
+            const val = e.target.value / 100;
+            if (defoOverlay && showDefo) defoOverlay.setOpacity(val);
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        initMaps();
+        updateStats();
+        setupListeners();
+    });
+    </script>
+</body>
+</html>

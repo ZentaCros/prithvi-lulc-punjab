@@ -1,0 +1,26 @@
+# Core ML
+torch>=2.0
+torchvision
+segmentation-models-pytorch>=0.3.3
+terratorch
+peft
+
+# Geospatial
+rasterio
+geopandas
+shapely
+pyproj
+h5py
+
+# Data & Visualization
+numpy
+matplotlib
+seaborn
+scikit-learn
+pandas
+tqdm
+tensorboard
+albumentations
+
+# Utilities
+pyyaml

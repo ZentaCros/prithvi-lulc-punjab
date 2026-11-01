@@ -1,0 +1,65 @@
+# Data files (too large for GitHub)
+data/
+checkpoints/
+outputs/
+results/
+
+# Paper manuscripts (submitted separately)
+MDPI_Paper/
+arXiv_Preprint/
+GRSL_Paper/
+cover_letter.*
+Publication plan v2/
+SUBMISSION_GUIDE_PROMPT.md
+FIGURE_RECREATION_PROMPTS.md
+RUN_EXPERIMENTS.md
+
+# Generated/utility scripts not part of core pipeline
+convert_to_webp.py
+convert_all_to_webp.py
+generate_basemaps.py
+generate_beautiful_basemaps.py
+generate_mapbox_tiffs.py
+fix_projection.py
+debug_overlay.png
+vercel.json
+
+# Figures (generated outputs)
+figures/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# LaTeX
+*.aux
+*.log
+*.out
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# Misc
+*.log
+*.tmp

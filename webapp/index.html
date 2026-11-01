@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LULC Change Detection — Punjab, Pakistan</title>
+    <meta name="description" content="AI-powered Land Use / Land Cover change detection dashboard for Lahore and Gujranwala, Punjab (2018-2026). Built with Prithvi v2 Foundation Model.">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Chart.js & Datalabels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css?v=2">
+</head>
+<body>
+
+    <!-- ─── LOADING OVERLAY ─── -->
+    <div id="loading-overlay">
+        <div class="loader-content">
+            <div class="loader-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+            </div>
+            <h2 class="loader-title">Loading Satellite Imagery</h2>
+            <div class="progress-bar-track">
+                <div class="progress-bar-fill" id="progress-fill"></div>
+            </div>
+            <p class="loader-status" id="loader-status">Preparing assets...</p>
+        </div>
+    </div>
+
+    <!-- ─── TOP NAV ─── -->
+    <nav id="topnav">
+        <div class="nav-left">
+            <div class="nav-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                </div>
+                <div class="nav-title">
+                    <h1>LULC Change Detection</h1>
+                    <span class="nav-subtitle">Punjab, Pakistan &mdash; Prithvi v2 Foundation Model</span>
+                </div>
+            </div>
+        </div>
+        <div class="nav-right">
+            <div class="nav-badge">
+                <span class="badge-dot"></span>
+                <span>AI-Powered</span>
+            </div>
+            <a href="comparison.html" style="display:flex;align-items:center;gap:6px;padding:5px 14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:20px;font-size:11px;font-weight:500;color:#ef4444;text-decoration:none;transition:all 0.3s;">
+                Deforestation Analysis &rarr;
+            </a>
+            <div class="nav-badge accent">
+                <span>Capstone 2 &mdash; 2026</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ─── MAIN CONTENT ─── -->
+    <main id="app">
+
+        <!-- ─── MAP AREA ─── -->
+        <section id="map-container">
+            <div id="map"></div>
+
+            <!-- Map overlay controls -->
+            <div id="map-controls">
+                <div class="map-control-group">
+                    <label>Opacity</label>
+                    <input type="range" id="opacity-slider" min="0" max="100" value="75">
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div id="map-legend">
+                <h4>LULC Classes</h4>
+                <div class="legend-item"><span class="legend-color" style="background:#22963a"></span>Vegetation</div>
+                <div class="legend-item"><span class="legend-color" style="background:#dc143c"></span>Built-up</div>
+                <div class="legend-item"><span class="legend-color" style="background:#ffd700"></span>Cropland</div>
+                <div class="legend-item"><span class="legend-color" style="background:#1e90ff"></span>Water</div>
+                <div class="legend-item"><span class="legend-color" style="background:#d2b48c"></span>Barren</div>
+            </div>
+        </section>
+
+        <!-- ─── SIDEBAR ─── -->
+        <aside id="sidebar">
+
+            <!-- City Selector -->
+            <div class="card" id="city-card">
+                <h3 class="card-title">City</h3>
+                <div class="toggle-group" id="city-toggle">
+                    <button class="toggle-btn active" data-city="lahore">Lahore</button>
+                    <button class="toggle-btn" data-city="gujranwala">Gujranwala</button>
+                </div>
+            </div>
+
+            <!-- Year Selector -->
+            <div class="card" id="year-card">
+                <h3 class="card-title">Year</h3>
+                <div class="toggle-group" id="year-toggle">
+                    <button class="toggle-btn" data-year="2018">2018</button>
+                    <button class="toggle-btn" data-year="2021">2021</button>
+                    <button class="toggle-btn active" data-year="2026">2026</button>
+                </div>
+            </div>
+
+            <!-- Key Stats -->
+            <div class="card" id="stats-card">
+                <h3 class="card-title">Change Detection <span class="card-tag">2018 &rarr; 2026</span></h3>
+                <div class="stats-grid" id="stats-grid">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+
+            <!-- Donut Chart -->
+            <div class="card" id="donut-card">
+                <h3 class="card-title">Land Use Distribution <span class="card-tag" id="donut-year-label">2026</span></h3>
+                <div class="chart-container">
+                    <canvas id="donut-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Bar Chart -->
+            <div class="card" id="bar-card">
+                <h3 class="card-title">Area Comparison <span class="card-tag">km&sup2;</span></h3>
+                <div class="chart-container bar-chart-container">
+                    <canvas id="bar-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Model Info -->
+            <div class="card" id="model-card">
+                <h3 class="card-title">Model Performance</h3>
+                <div class="model-info" id="model-info">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+
+        </aside>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
