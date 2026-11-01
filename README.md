@@ -10,7 +10,7 @@
 
 **Can a foundation model pre-trained on global satellite imagery outperform task-specific architectures in South Asian urban landscapes -- and generalize to unseen cities without retraining?**
 
-[Paper (under review)](#citation) | [Interactive Dashboard](#web-dashboard) | [Getting Started](#setup)
+[Paper (under review)](#citation) | [Live Dashboard](https://greenwatch-dashboard.vercel.app) | [Getting Started](#setup)
 
 </div>
 
@@ -208,10 +208,14 @@ python evaluation/significance_tests.py
 
 ## Web Dashboard
 
+[![Live Dashboard](https://img.shields.io/badge/Live_Demo-greenwatch--dashboard.vercel.app-22c55e?style=for-the-badge&logo=vercel&logoColor=white)](https://greenwatch-dashboard.vercel.app)
+
 An interactive Leaflet.js dashboard for exploring LULC maps and change detection results across both cities and all time periods.
 
+**[greenwatch-dashboard.vercel.app](https://greenwatch-dashboard.vercel.app)** | [Source code](https://github.com/ZentaCros/greenwatch-dashboard)
+
 ```bash
-# Serve locally
+# Or run locally
 cd webapp
 python -m http.server 8000
 # Open http://localhost:8000
