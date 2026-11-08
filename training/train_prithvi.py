@@ -56,92 +56,94 @@ def load_prithvi_backbone():
 def adapt_input_to_11bands(backbone, backbone_type):
     """
     Adapt the 6-band input projection to accept 11 bands (10 Sentinel-2 + NDVI).
-    Copies pretrained weights for bands 0-5, initializes bands 6-10 from similar bands.
-    Band 10 = NDVI, initialized from NIR (band 3 in Prithvi's original band order).
+
+    Prithvi-EO 2.0 pretrained bands (HLS order):
+        [0]=B2(490nm), [1]=B3(560nm), [2]=B4(665nm),
+        [3]=B8A(865nm), [4]=B11(1610nm), [5]=B12(2190nm)
+
+    Our 11 input bands:
+        [0]=B2, [1]=B3, [2]=B4, [3]=B5(705nm), [4]=B6(740nm), [5]=B7(783nm),
+        [6]=B8(842nm), [7]=B8A(865nm), [8]=B11(1610nm), [9]=B12(2190nm), [10]=NDVI
+
+    Spectral mapping:
+        pos 0-2 (B2,B3,B4) <- exact pretrained match
+        pos 3-5 (B5,B6,B7) <- wavelength-interpolated between B4 and B8A
+        pos 6   (B8)       <- from B8A (spectrally adjacent, 842 vs 865 nm)
+        pos 7   (B8A)      <- exact pretrained match
+        pos 8   (B11)      <- exact pretrained match
+        pos 9   (B12)      <- exact pretrained match
+        pos 10  (NDVI)     <- from B8A (NIR component)
     """
-    if backbone_type == "prithvi":
-        # Find the patch embedding layer
-        patch_embed = None
-        for name, module in backbone.named_modules():
-            if hasattr(module, 'proj') and isinstance(module.proj, nn.Conv2d):
-                if module.proj.in_channels == 6:
-                    patch_embed = module
-                    break
-            # Also check for Conv3d (Prithvi uses 3D patches)
-            if hasattr(module, 'proj') and isinstance(module.proj, nn.Conv3d):
-                if module.proj.in_channels == 6:
-                    patch_embed = module
-                    break
+    if backbone_type != "prithvi":
+        return False
 
-        if patch_embed is None:
-            # Try direct access
-            if hasattr(backbone, 'patch_embed'):
-                patch_embed = backbone.patch_embed
-            else:
-                print("  [WARN] Could not find patch_embed, trying alternative")
-                for name, module in backbone.named_modules():
-                    if 'patch' in name.lower() and 'embed' in name.lower():
-                        patch_embed = module
-                        break
+    patch_embed = None
+    for name, module in backbone.named_modules():
+        if hasattr(module, 'proj') and isinstance(module.proj, (nn.Conv2d, nn.Conv3d)):
+            if module.proj.in_channels == 6:
+                patch_embed = module
+                break
 
-        if patch_embed is not None and hasattr(patch_embed, 'proj'):
-            old_proj = patch_embed.proj
-            is_3d = isinstance(old_proj, nn.Conv3d)
-
-            if is_3d:
-                # Conv3d: (out, in=6, t, h, w) -> (out, in=11, t, h, w)
-                old_weight = old_proj.weight.data  # (out, 6, t, h, w)
-                out_c = old_weight.shape[0]
-                t, h, w = old_weight.shape[2], old_weight.shape[3], old_weight.shape[4]
-
-                new_proj = nn.Conv3d(11, out_c, kernel_size=(old_proj.kernel_size),
-                                     stride=old_proj.stride, padding=old_proj.padding,
-                                     bias=old_proj.bias is not None)
-
-                new_weight = torch.zeros(out_c, 11, t, h, w)
-                # Copy original 6 bands
-                new_weight[:, :6] = old_weight
-                # Initialize new bands from related pretrained bands:
-                new_weight[:, 6] = old_weight[:, 3]   # Band 6 (B8 NIR)
-                new_weight[:, 7] = old_weight[:, 4]   # Band 7 (B8A Narrow NIR)
-                new_weight[:, 8] = old_weight[:, 5]   # Band 8 (B11 SWIR1)
-                new_weight[:, 9] = old_weight[:, 5]   # Band 9 (B12 SWIR2)
-                new_weight[:, 10] = old_weight[:, 3]  # Band 10 (NDVI) from NIR
-
-                new_proj.weight.data = new_weight
-                if old_proj.bias is not None:
-                    new_proj.bias.data = old_proj.bias.data.clone()
-            else:
-                # Conv2d: (out, in=6, h, w) -> (out, in=10, h, w)
-                old_weight = old_proj.weight.data  # (out, 6, h, w)
-                out_c = old_weight.shape[0]
-                h, w = old_weight.shape[2], old_weight.shape[3]
-
-                new_proj = nn.Conv2d(11, out_c, kernel_size=old_proj.kernel_size,
-                                     stride=old_proj.stride, padding=old_proj.padding,
-                                     bias=old_proj.bias is not None)
-
-                new_weight = torch.zeros(out_c, 11, h, w)
-                new_weight[:, :6] = old_weight
-                new_weight[:, 6] = old_weight[:, 3]   # B8 NIR
-                new_weight[:, 7] = old_weight[:, 4]   # B8A NIR Narrow
-                new_weight[:, 8] = old_weight[:, 5]   # B11 SWIR1
-                new_weight[:, 9] = old_weight[:, 5]   # B12 SWIR2
-                new_weight[:, 10] = old_weight[:, 3]  # NDVI from NIR
-
-                new_proj.weight.data = new_weight
-                if old_proj.bias is not None:
-                    new_proj.bias.data = old_proj.bias.data.clone()
-
-            patch_embed.proj = new_proj
-            proj_type = "Conv3d" if is_3d else "Conv2d"
-            print(f"  [OK] Adapted patch_embed {proj_type}: 6 -> 11 bands (10 Sentinel-2 + NDVI)")
-            print(f"       Bands 6-9 from spectrally-adjacent pretrained bands, Band 10 (NDVI) from NIR")
-            return True
+    if patch_embed is None:
+        if hasattr(backbone, 'patch_embed'):
+            patch_embed = backbone.patch_embed
         else:
-            print("  [WARN] Could not find patch_embed.proj to adapt")
-            return False
-    return False
+            for name, module in backbone.named_modules():
+                if 'patch' in name.lower() and 'embed' in name.lower():
+                    patch_embed = module
+                    break
+
+    if patch_embed is None or not hasattr(patch_embed, 'proj'):
+        print("  [WARN] Could not find patch_embed.proj to adapt")
+        return False
+
+    old_proj = patch_embed.proj
+    is_3d = isinstance(old_proj, nn.Conv3d)
+    old_weight = old_proj.weight.data
+
+    if is_3d:
+        out_c, _, t, h, w = old_weight.shape
+        new_proj = nn.Conv3d(11, out_c, kernel_size=old_proj.kernel_size,
+                             stride=old_proj.stride, padding=old_proj.padding,
+                             bias=old_proj.bias is not None)
+        new_weight = torch.zeros(out_c, 11, t, h, w)
+    else:
+        out_c, _, h, w = old_weight.shape
+        new_proj = nn.Conv2d(11, out_c, kernel_size=old_proj.kernel_size,
+                             stride=old_proj.stride, padding=old_proj.padding,
+                             bias=old_proj.bias is not None)
+        new_weight = torch.zeros(out_c, 11, h, w)
+
+    # Pretrained indices: 0=B2, 1=B3, 2=B4, 3=B8A, 4=B11, 5=B12
+    PT_B2, PT_B3, PT_B4, PT_B8A, PT_B11, PT_B12 = 0, 1, 2, 3, 4, 5
+
+    # Exact spectral matches
+    new_weight[:, 0]  = old_weight[:, PT_B2]    # B2  <- B2
+    new_weight[:, 1]  = old_weight[:, PT_B3]    # B3  <- B3
+    new_weight[:, 2]  = old_weight[:, PT_B4]    # B4  <- B4
+    new_weight[:, 7]  = old_weight[:, PT_B8A]   # B8A <- B8A
+    new_weight[:, 8]  = old_weight[:, PT_B11]   # B11 <- B11
+    new_weight[:, 9]  = old_weight[:, PT_B12]   # B12 <- B12
+
+    # Red Edge interpolation (wavelength-based between B4=665nm and B8A=865nm)
+    new_weight[:, 3] = 0.80 * old_weight[:, PT_B4] + 0.20 * old_weight[:, PT_B8A]  # B5 705nm
+    new_weight[:, 4] = 0.625 * old_weight[:, PT_B4] + 0.375 * old_weight[:, PT_B8A]  # B6 740nm
+    new_weight[:, 5] = 0.41 * old_weight[:, PT_B4] + 0.59 * old_weight[:, PT_B8A]  # B7 783nm
+
+    # B8 (842nm) from B8A (865nm) - spectrally very close
+    new_weight[:, 6]  = old_weight[:, PT_B8A]   # B8  <- B8A
+    # NDVI from NIR
+    new_weight[:, 10] = old_weight[:, PT_B8A]   # NDVI <- B8A
+
+    new_proj.weight.data = new_weight
+    if old_proj.bias is not None:
+        new_proj.bias.data = old_proj.bias.data.clone()
+
+    patch_embed.proj = new_proj
+    proj_type = "Conv3d" if is_3d else "Conv2d"
+    print(f"  [OK] Adapted patch_embed {proj_type}: 6 -> 11 bands (spectral mapping)")
+    print(f"       B2,B3,B4,B8A,B11,B12 = exact match | B5-B7 = interpolated | B8,NDVI from B8A")
+    return True
 
 
 class LightweightDecoder(nn.Module):
@@ -278,12 +280,20 @@ def setup_training_params(model, lora_rank=64, unfreeze_last_n=8):
             param.requires_grad = True
 
     # Step 4: Apply LoRA to remaining FROZEN attention layers
+    if lora_rank == 0:
+        print(f"  [OK] LoRA disabled (rank=0)")
+        total = sum(p.numel() for p in model.parameters())
+        trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        frozen = total - trainable
+        pct = 100 * trainable / total
+        print(f"  Parameters: {total:,} total | {trainable:,} trainable ({pct:.1f}%) | {frozen:,} frozen")
+        return
+
     targets = []
     for name, module in model.backbone.named_modules():
         if isinstance(module, nn.Linear) and any(
             k in name for k in ["qkv", "proj", "fc1", "fc2", "attn"]
         ):
-            # Only apply LoRA to frozen layers
             has_frozen_params = any(not p.requires_grad for p in module.parameters())
             if has_frozen_params:
                 targets.append((name, module))

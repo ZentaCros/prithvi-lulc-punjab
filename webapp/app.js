@@ -43,56 +43,54 @@ const BASEMAP_PATHS = {
     },
 };
 
-// Change detection (Ensemble results from inference pipeline)
+// Change detection (Prithvi-EO 2.0, seed 42, pipeline_fix6)
 const CHANGE_DATA = {
     lahore: {
-        "Vegetation":   { area_2018: 793.23, area_2021: 771.0,  area_2026: 751.59, net: -41.64 },
-        "Built-up":     { area_2018: 500.35, area_2021: 553.0,  area_2026: 606.97, net: 106.62 },
-        "Cropland":     { area_2018: 889.74, area_2021: 910.0,  area_2026: 928.38, net:  38.64 },
-        "Water":        { area_2018:  21.21, area_2021:  22.7,   area_2026:  24.20, net:   2.99 },
-        "Barren/Other": { area_2018: 196.27, area_2021: 144.0,  area_2026:  89.66, net:-106.61 },
+        "Vegetation":   { area_2018: 840.3, area_2021: 840.9,  area_2026: 841.4, net:   1.1 },
+        "Built-up":     { area_2018: 487.5, area_2021: 541.3,  area_2026: 595.0, net: 107.5 },
+        "Cropland":     { area_2018: 807.9, area_2021: 810.6,  area_2026: 813.3, net:   5.4 },
+        "Water":        { area_2018:  22.4, area_2021:  24.0,   area_2026:  25.5, net:   3.1 },
+        "Barren/Other": { area_2018: 212.6, area_2021: 154.1,  area_2026:  95.5, net:-117.1 },
     },
     gujranwala: {
-        "Vegetation":   { area_2018: 616.27, area_2021: 607.0,  area_2026: 598.13, net: -18.14 },
-        "Built-up":     { area_2018: 188.84, area_2021: 207.0,  area_2026: 225.66, net:  36.82 },
-        "Cropland":     { area_2018:1540.84, area_2021:1540.0,  area_2026:1539.08, net:  -1.76 },
-        "Water":        { area_2018:   7.95, area_2021:   7.3,   area_2026:   6.73, net:  -1.22 },
-        "Barren/Other": { area_2018:  36.54, area_2021:  28.7,   area_2026:  20.83, net: -15.70 },
+        "Vegetation":   { area_2018: 603.5, area_2021: 597.3,  area_2026: 591.0, net: -12.5 },
+        "Built-up":     { area_2018: 183.8, area_2021: 201.0,  area_2026: 218.2, net:  34.4 },
+        "Cropland":     { area_2018:1518.3, area_2021:1515.0,  area_2026:1511.7, net:  -6.6 },
+        "Water":        { area_2018:   7.9, area_2021:   7.7,   area_2026:   7.5, net:  -0.4 },
+        "Barren/Other": { area_2018:  39.4, area_2021:  32.0,   area_2026:  24.5, net: -14.9 },
     },
 };
 
-// Full-city evaluation metrics (from pipeline evaluation JSONs, best seed)
+// Full-city evaluation metrics (seed 42, pipeline_fix6)
 const MODEL_METRICS = {
     lahore: {
-        "U-Net (B4)":    { acc: 68.92, f1: 64.84, miou: 49.68 },
-        "SegFormer":     { acc: 68.83, f1: 64.83, miou: 49.72 },
-        "DeepLabV3+":    { acc: 69.05, f1: 65.24, miou: 50.14 },
-        "Prithvi v2":    { acc: 70.66, f1: 66.71, miou: 51.66 },
-        "Ensemble":      { acc: 70.37, f1: 66.51, miou: 51.47 },
+        "U-Net (EffNet-B4)": { oa: 82.27, miou: 59.26 },
+        "DeepLabV3+":        { oa: 82.50, miou: 59.93 },
+        "MiT-B2+FPN":        { oa: 82.25, miou: 59.35 },
+        "Prithvi-EO 2.0":   { oa: 84.55, miou: 62.02 },
     },
     gujranwala: {
-        "U-Net (B4)":    { acc: 74.78, f1: 58.90, miou: 44.75 },
-        "SegFormer":     { acc: 74.84, f1: 59.26, miou: 45.14 },
-        "DeepLabV3+":    { acc: 74.82, f1: 58.18, miou: 44.34 },
-        "Prithvi v2":    { acc: 75.45, f1: 60.69, miou: 46.60 },
-        "Ensemble":      { acc: 75.48, f1: 60.65, miou: 46.52 },
+        "U-Net (EffNet-B4)": { oa: 90.47, miou: 55.29 },
+        "DeepLabV3+":        { oa: 90.52, miou: 54.57 },
+        "MiT-B2+FPN":        { oa: 90.48, miou: 54.71 },
+        "Prithvi-EO 2.0":   { oa: 91.31, miou: 58.31 },
     },
 };
 
 // Patch-level metrics (mean ± std over 3 seeds: 42, 123, 7)
 const PATCH_METRICS = {
-    "U-Net (B4)":    { miou: 59.16, std: 0.07, oa: 81.18, oa_std: 0.09 },
-    "MiT-B2+FPN":    { miou: 59.07, std: 0.07, oa: 80.61, oa_std: 0.12 },
-    "DeepLabV3+":    { miou: 59.05, std: 0.17, oa: 80.81, oa_std: 0.06 },
-    "Prithvi v2":    { miou: 61.19, std: 0.25, oa: 82.75, oa_std: 0.24 },
+    "U-Net (EffNet-B4)": { miou: 59.16, std: 0.07, oa: 81.18, oa_std: 0.09 },
+    "DeepLabV3+":        { miou: 59.05, std: 0.17, oa: 80.81, oa_std: 0.06 },
+    "MiT-B2+FPN":        { miou: 59.07, std: 0.07, oa: 80.61, oa_std: 0.12 },
+    "Prithvi-EO 2.0":   { miou: 61.02, std: 0.45, oa: 82.83, oa_std: 0.35 },
 };
 
-// LoRA rank ablation (seed 42, 8 unfrozen blocks)
+// LoRA rank ablation (seed 42, 8 unfrozen blocks, pipeline_fix6)
 const LORA_ABLATION = [
-    { rank:  8, trainable: "106.7M", pct: 34.6, miou: 60.40, oa: 82.07 },
-    { rank: 16, trainable: "109.6M", pct: 35.2, miou: 60.67, oa: 82.63 },
-    { rank: 32, trainable: "115.4M", pct: 36.4, miou: 61.12, oa: 82.62 },
-    { rank: 64, trainable: "121.4M", pct: 37.6, miou: 61.19, oa: 82.70 },
+    { rank:  8, trainable: "105.4M", pct: 34.3, miou: 60.21, oa: 82.27 },
+    { rank: 16, trainable: "107.5M", pct: 34.8, miou: 60.52, oa: 82.65 },
+    { rank: 32, trainable: "111.7M", pct: 35.7, miou: 60.70, oa: 82.65 },
+    { rank: 64, trainable: "120.1M", pct: 37.3, miou: 61.24, oa: 82.90 },
 ];
 
 const CLASS_COLORS = {
@@ -254,7 +252,7 @@ function initMap() {
 
     // Add attribution
     L.control.attribution({ prefix: false, position: "bottomleft" })
-        .addAttribution('Imagery &copy; Sentinel-2 | LULC &copy; Prithvi v2')
+        .addAttribution('Imagery &copy; Sentinel-2 | LULC &copy; Prithvi-EO 2.0')
         .addTo(map);
 
     updateOverlay();
