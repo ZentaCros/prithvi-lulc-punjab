@@ -1,14 +1,14 @@
 <div align="center">
 
-# Benchmarking a LoRA-Adapted EO Foundation Model for Land Cover Mapping and Zero-Shot Cross-City Generalization
+# Parameter-Efficient Adaptation of an Earth Observation Foundation Model for Land Cover Mapping
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Paper](https://img.shields.io/badge/Paper-MDPI_Remote_Sensing-blue)](https://www.mdpi.com/journal/remotesensing)
+[![Paper](https://img.shields.io/badge/Paper-Computers_&_Geosciences-blue)](https://www.sciencedirect.com/journal/computers-and-geosciences)
 [![Sentinel-2](https://img.shields.io/badge/Data-Sentinel--2_L2A-orange?logo=satellite&logoColor=white)](#data)
 
-**Can a foundation model pre-trained on global satellite imagery outperform task-specific architectures in South Asian urban landscapes -- and generalize to unseen cities without retraining?**
+**A reproducible pipeline for adapting a 300M-parameter earth observation foundation model to land cover segmentation on consumer-grade hardware (6 GB VRAM).**
 
 [Paper (under review)](#citation) | [Live Dashboard](https://greenwatch-dashboard.vercel.app) | [Getting Started](#setup)
 
@@ -18,10 +18,10 @@
 
 ## Overview
 
-We benchmark **NASA/IBM Prithvi-EO 2.0** (300M params), fine-tuned via **LoRA + selective block unfreezing**, against U-Net, DeepLabV3+, and MiT-B2+FPN for 5-class land cover segmentation over **Lahore, Pakistan** using 11-band Sentinel-2 imagery. We then test zero-shot cross-city transfer to **Gujranwala** -- no retraining, no fine-tuning, just inference on an unseen city.
+This repository implements a parameter-efficient pipeline for adapting **NASA/IBM Prithvi-EO 2.0** (300M params) via **LoRA + selective block unfreezing** for 5-class land cover segmentation over **Lahore, Pakistan** using 11-band Sentinel-2 imagery, benchmarked against U-Net, DeepLabV3+, and MiT-B2+FPN. Zero-shot cross-city transfer is evaluated on **Gujranwala** without retraining.
 
 <div align="center">
-<img src="docs/methodology.png" alt="End-to-end methodology" width="95%"/>
+<img src="docs/Figure_1.png" alt="End-to-end methodology" width="95%"/>
 <br/>
 <em>Figure 1: End-to-end methodology -- from data acquisition through model benchmarking to change detection and deployment.</em>
 </div>
@@ -32,18 +32,18 @@ We benchmark **NASA/IBM Prithvi-EO 2.0** (300M params), fine-tuned via **LoRA + 
 
 | | Finding | Detail |
 |---|---------|--------|
-| 1 | **Prithvi wins on all metrics** | +2.03 pp mIoU over the best baseline (U-Net) across 3 seeds |
-| 2 | **Zero-shot transfer works** | Prithvi scores 46.60% mIoU on Gujranwala without seeing a single training sample from it |
-| 3 | **LoRA is efficient** | Only 37.6% of parameters are trainable; diminishing returns above rank 32 |
+| 1 | **Prithvi wins on all metrics** | +1.86 pp mIoU over the best baseline across 3 seeds |
+| 2 | **Zero-shot transfer works** | +3.02 pp mIoU on Gujranwala without any retraining |
+| 3 | **LoRA is efficient** | Only 37.3% of parameters are trainable (120.1M of 321.6M) |
 | 4 | **Runs on consumer hardware** | All training on a single RTX 4050 (6 GB VRAM) with FP16 mixed precision |
-| 5 | **Urbanization quantified** | +108 km2 built-up expansion in Lahore between 2018 and 2026 |
+| 5 | **Urbanization quantified** | +107.5 km2 built-up expansion in Lahore between 2018 and 2026 |
 
 ---
 
 ## Architecture
 
 <div align="center">
-<img src="docs/architecture.png" alt="Prithvi-EO 2.0 + LoRA architecture" width="95%"/>
+<img src="docs/Figure_2.png" alt="Prithvi-EO 2.0 + LoRA architecture" width="95%"/>
 <br/>
 <em>Figure 2: Prithvi-EO 2.0 adaptation -- 16 frozen blocks with LoRA (r=64) + 8 fully unfrozen blocks + trainable decoder.</em>
 </div>
@@ -59,25 +59,25 @@ We benchmark **NASA/IBM Prithvi-EO 2.0** (300M params), fine-tuned via **LoRA + 
 | U-Net | EfficientNet-B4 | 20M | 81.18 +/- 0.09 | 59.16 +/- 0.07 | 72.85 +/- 0.06 |
 | MiT-B2 + FPN | MiT-B2 | 26M | 80.61 +/- 0.12 | 59.07 +/- 0.07 | 72.73 +/- 0.03 |
 | DeepLabV3+ | ResNet-101 | 46M | 80.81 +/- 0.06 | 59.05 +/- 0.17 | 72.73 +/- 0.14 |
-| **Prithvi-EO 2.0** | **ViT + LoRA** | **323M** | **82.75 +/- 0.24** | **61.19 +/- 0.25** | **74.53 +/- 0.21** |
+| **Prithvi-EO 2.0** | **ViT + LoRA** | **321.6M** | **82.83 +/- 0.35** | **61.02 +/- 0.45** | **74.53 +/- 0.21** |
 
 ### Zero-Shot Cross-City Generalization (seed 42)
 
 | Model | Lahore OA | Lahore mIoU | Gujranwala OA | Gujranwala mIoU |
 |:------|----------:|------------:|--------------:|----------------:|
-| U-Net | 68.92 | 49.68 | 74.78 | 44.75 |
-| DeepLabV3+ | 69.05 | 50.14 | 74.82 | 44.34 |
-| MiT-B2 + FPN | 68.83 | 49.72 | 74.84 | 45.14 |
-| **Prithvi-EO 2.0** | **70.66** | **51.66** | **75.45** | **46.60** |
+| U-Net | 82.27 | 59.26 | 90.47 | 55.29 |
+| DeepLabV3+ | 82.50 | 59.93 | 90.52 | 54.57 |
+| MiT-B2 + FPN | 82.25 | 59.35 | 90.48 | 54.71 |
+| **Prithvi-EO 2.0** | **84.55** | **62.02** | **91.31** | **58.31** |
 
 ### LoRA Rank Ablation
 
 | Rank | Trainable Params | Train % | mIoU (%) | OA (%) |
 |-----:|-----------------:|--------:|---------:|-------:|
-| 8 | 106.7M | 34.6% | 60.40 | 82.07 |
-| 16 | 109.6M | 35.2% | 60.67 | 82.63 |
-| 32 | 115.4M | 36.4% | 61.12 | 82.62 |
-| **64** | **121.4M** | **37.6%** | **61.19** | **82.70** |
+| 8 | 105.4M | 34.3% | 60.21 | 82.27 |
+| 16 | 107.5M | 34.8% | 60.52 | 82.65 |
+| 32 | 111.7M | 35.7% | 60.70 | 82.65 |
+| **64** | **120.1M** | **37.3%** | **61.24** | **82.90** |
 
 ---
 
@@ -86,7 +86,7 @@ We benchmark **NASA/IBM Prithvi-EO 2.0** (300M params), fine-tuned via **LoRA + 
 ### Prediction Comparison (Lahore test patches)
 
 <div align="center">
-<img src="docs/predictions_panel.png" alt="Prediction comparison across models" width="95%"/>
+<img src="docs/Figure_3.png" alt="Prediction comparison across models" width="95%"/>
 <br/>
 <em>Qualitative comparison: RGB input, ground truth, and predictions from all four models.</em>
 </div>
@@ -94,7 +94,7 @@ We benchmark **NASA/IBM Prithvi-EO 2.0** (300M params), fine-tuned via **LoRA + 
 ### Change Detection (2018 - 2026)
 
 <div align="center">
-<img src="docs/change_detection.png" alt="Change detection maps" width="95%"/>
+<img src="docs/Figure_4.png" alt="Change detection maps" width="95%"/>
 <br/>
 <em>Multi-temporal land cover change in Lahore and Gujranwala, detected via post-classification comparison using the best-performing Prithvi model.</em>
 </div>
@@ -110,6 +110,7 @@ prithvi-lulc-punjab/
 │   ├── gee_sentinel2_2021_export.js
 │   ├── gee_lahore_2026_export.js
 │   ├── gee_gujranwala_export.js
+│   ├── gee_gujranwala_dryseason_export.js
 │   ├── gee_worldcover_export.js
 │   └── gee_hansen_export.js
 ├── preprocessing/
@@ -200,7 +201,7 @@ python evaluation/significance_tests.py
 | U-Net | EfficientNet-B4 | 20M | 20M (100%) | Full fine-tune | SMP v0.6.0 |
 | DeepLabV3+ | ResNet-101 | 46M | 46M (100%) | Full fine-tune | SMP v0.6.0 |
 | MiT-B2 + FPN | MiT-B2 | 26M | 26M (100%) | Full fine-tune | SMP v0.6.0 |
-| Prithvi-EO 2.0 | ViT (24 blocks) | 323M | 121M (37.6%) | LoRA (r=64) + 8 unfrozen blocks | Terratorch + PEFT |
+| Prithvi-EO 2.0 | ViT (24 blocks) | 321.6M | 120.1M (37.3%) | LoRA (r=64) + 8 unfrozen blocks | Terratorch + PEFT |
 
 **Training config:** 50 epochs, AdamW optimizer, OneCycleLR scheduler, Dice + Focal loss (0.5 each), batch size 2, FP16 mixed precision.
 
@@ -228,11 +229,12 @@ python -m http.server 8000
 If you use this code or data, please cite:
 
 ```bibtex
-@article{azeem2026benchmarking,
-  title={Benchmarking a {LoRA}-Adapted {EO} Foundation Model for Land Cover
-         Mapping and Zero-Shot Cross-City Generalization in {Punjab}, {Pakistan}},
+@article{azeem2026parameter,
+  title={Parameter-Efficient Adaptation of an Earth Observation Foundation Model
+         for Land Cover Mapping: Hybrid {LoRA} Fine-Tuning Evaluated on
+         {Sentinel-2} Imagery in {Punjab}, {Pakistan}},
   author={Azeem, Muhammad Hamza},
-  journal={Remote Sensing},
+  journal={Computers \& Geosciences},
   year={2026},
   note={Under review}
 }
