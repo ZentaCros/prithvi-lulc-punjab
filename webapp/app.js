@@ -46,18 +46,18 @@ const BASEMAP_PATHS = {
 // Change detection (Prithvi-EO 2.0, seed 42, pipeline_fix6)
 const CHANGE_DATA = {
     lahore: {
-        "Vegetation":   { area_2018: 840.3, area_2021: 840.9,  area_2026: 841.4, net:   1.1 },
-        "Built-up":     { area_2018: 487.5, area_2021: 541.3,  area_2026: 595.0, net: 107.5 },
-        "Cropland":     { area_2018: 807.9, area_2021: 810.6,  area_2026: 813.3, net:   5.4 },
-        "Water":        { area_2018:  22.4, area_2021:  24.0,   area_2026:  25.5, net:   3.1 },
-        "Barren/Other": { area_2018: 212.6, area_2021: 154.1,  area_2026:  95.5, net:-117.1 },
+        "Vegetation":   { area_2018: 840.3, area_2021: 844.0,  area_2026: 841.4, net:   1.1 },
+        "Built-up":     { area_2018: 487.5, area_2021: 524.4,  area_2026: 595.0, net: 107.5 },
+        "Cropland":     { area_2018: 807.9, area_2021: 874.5,  area_2026: 813.3, net:   5.4 },
+        "Water":        { area_2018:  22.4, area_2021:  20.4,   area_2026:  25.5, net:   3.1 },
+        "Barren/Other": { area_2018: 212.6, area_2021: 107.2,  area_2026:  95.5, net:-117.1 },
     },
     gujranwala: {
-        "Vegetation":   { area_2018: 603.5, area_2021: 597.3,  area_2026: 591.0, net: -12.5 },
-        "Built-up":     { area_2018: 183.8, area_2021: 201.0,  area_2026: 218.2, net:  34.4 },
-        "Cropland":     { area_2018:1518.3, area_2021:1515.0,  area_2026:1511.7, net:  -6.6 },
-        "Water":        { area_2018:   7.9, area_2021:   7.7,   area_2026:   7.5, net:  -0.4 },
-        "Barren/Other": { area_2018:  39.4, area_2021:  32.0,   area_2026:  24.5, net: -14.9 },
+        "Vegetation":   { area_2018: 603.5, area_2021: 594.9,  area_2026: 591.0, net: -12.5 },
+        "Built-up":     { area_2018: 183.8, area_2021: 182.3,  area_2026: 218.2, net:  34.4 },
+        "Cropland":     { area_2018:1518.3, area_2021:1543.4,  area_2026:1511.7, net:  -6.6 },
+        "Water":        { area_2018:   7.9, area_2021:   6.8,   area_2026:   7.5, net:  -0.4 },
+        "Barren/Other": { area_2018:  39.4, area_2021:  25.6,   area_2026:  24.5, net: -14.9 },
     },
 };
 
@@ -79,9 +79,9 @@ const MODEL_METRICS = {
 
 // Patch-level metrics (mean ± std over 3 seeds: 42, 123, 7)
 const PATCH_METRICS = {
-    "U-Net (EffNet-B4)": { miou: 59.16, std: 0.07, oa: 81.18, oa_std: 0.09 },
-    "DeepLabV3+":        { miou: 59.05, std: 0.17, oa: 80.81, oa_std: 0.06 },
-    "MiT-B2+FPN":        { miou: 59.07, std: 0.07, oa: 80.61, oa_std: 0.12 },
+    "U-Net (EffNet-B4)": { miou: 59.16, std: 0.09, oa: 81.18, oa_std: 0.11 },
+    "DeepLabV3+":        { miou: 59.05, std: 0.21, oa: 80.81, oa_std: 0.07 },
+    "MiT-B2+FPN":        { miou: 59.07, std: 0.09, oa: 80.61, oa_std: 0.15 },
     "Prithvi-EO 2.0":   { miou: 61.02, std: 0.45, oa: 82.83, oa_std: 0.35 },
 };
 

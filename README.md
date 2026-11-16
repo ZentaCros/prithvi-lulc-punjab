@@ -5,12 +5,12 @@
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Paper](https://img.shields.io/badge/Paper-Computers_&_Geosciences-blue)](https://www.sciencedirect.com/journal/computers-and-geosciences)
+[![Paper](https://img.shields.io/badge/Paper-Manuscript-blue)](#citation)
 [![Sentinel-2](https://img.shields.io/badge/Data-Sentinel--2_L2A-orange?logo=satellite&logoColor=white)](#data)
 
 **A reproducible pipeline for adapting a 300M-parameter earth observation foundation model to land cover segmentation on consumer-grade hardware (6 GB VRAM).**
 
-[Paper (under review)](#citation) | [Live Dashboard](https://greenwatch-dashboard.vercel.app) | [Getting Started](#setup)
+[Paper (manuscript)](#citation) | [Live Dashboard](https://greenwatch-dashboard.vercel.app) | [Getting Started](#setup)
 
 </div>
 
@@ -32,8 +32,8 @@ This repository implements a parameter-efficient pipeline for adapting **NASA/IB
 
 | | Finding | Detail |
 |---|---------|--------|
-| 1 | **Prithvi wins on all metrics** | +1.86 pp mIoU over the best baseline across 3 seeds |
-| 2 | **Zero-shot transfer works** | +3.02 pp mIoU on Gujranwala without any retraining |
+| 1 | **Prithvi leads on OA, mIoU and mF1** | +1.86 pp mIoU over the best baseline (mean of 3 seeds) |
+| 2 | **Best zero-shot transfer** | 58.31% mIoU on Gujranwala without retraining, +3.02 pp over the best baseline (seed 42) |
 | 3 | **LoRA is efficient** | Only 37.3% of parameters are trainable (120.1M of 321.6M) |
 | 4 | **Runs on consumer hardware** | All training on a single RTX 4050 (6 GB VRAM) with FP16 mixed precision |
 | 5 | **Urbanization quantified** | +107.5 km2 built-up expansion in Lahore between 2018 and 2026 |
@@ -56,10 +56,12 @@ This repository implements a parameter-efficient pipeline for adapting **NASA/IB
 
 | Model | Encoder | Params | OA (%) | mIoU (%) | mF1 (%) |
 |:------|:--------|-------:|-------:|---------:|--------:|
-| U-Net | EfficientNet-B4 | 20M | 81.18 +/- 0.09 | 59.16 +/- 0.07 | 72.85 +/- 0.06 |
-| MiT-B2 + FPN | MiT-B2 | 26M | 80.61 +/- 0.12 | 59.07 +/- 0.07 | 72.73 +/- 0.03 |
-| DeepLabV3+ | ResNet-101 | 46M | 80.81 +/- 0.06 | 59.05 +/- 0.17 | 72.73 +/- 0.14 |
-| **Prithvi-EO 2.0** | **ViT + LoRA** | **321.6M** | **82.83 +/- 0.35** | **61.02 +/- 0.45** | **74.53 +/- 0.21** |
+| U-Net | EfficientNet-B4 | 20M | 81.18 +/- 0.11 | 59.16 +/- 0.09 | 72.85 +/- 0.07 |
+| MiT-B2 + FPN | MiT-B2 | 26M | 80.61 +/- 0.15 | 59.07 +/- 0.09 | 72.73 +/- 0.04 |
+| DeepLabV3+ | ResNet-101 | 46M | 80.81 +/- 0.07 | 59.05 +/- 0.21 | 72.73 +/- 0.17 |
+| **Prithvi-EO 2.0** | **ViT + LoRA** | **321.6M** | **82.83 +/- 0.35** | **61.02 +/- 0.45** | **74.37 +/- 0.35** |
+
+Mean +/- sample standard deviation over 3 seeds.
 
 ### Zero-Shot Cross-City Generalization (seed 42)
 
@@ -96,7 +98,7 @@ This repository implements a parameter-efficient pipeline for adapting **NASA/IB
 <div align="center">
 <img src="docs/Figure_4.png" alt="Change detection maps" width="95%"/>
 <br/>
-<em>Multi-temporal land cover change in Lahore and Gujranwala, detected via post-classification comparison using the best-performing Prithvi model.</em>
+<em>Prithvi-EO 2.0 land cover maps of Lahore for 2018 and 2026, compared via post-classification change detection.</em>
 </div>
 
 ---
@@ -203,7 +205,7 @@ python evaluation/significance_tests.py
 | MiT-B2 + FPN | MiT-B2 | 26M | 26M (100%) | Full fine-tune | SMP v0.6.0 |
 | Prithvi-EO 2.0 | ViT (24 blocks) | 321.6M | 120.1M (37.3%) | LoRA (r=64) + 8 unfrozen blocks | Terratorch + PEFT |
 
-**Training config:** 50 epochs, AdamW optimizer, OneCycleLR scheduler, Dice + Focal loss (0.5 each), batch size 2, FP16 mixed precision.
+**Training config:** 50 epochs, AdamW optimizer, OneCycleLR scheduler, Dice + Focal loss (0.5 each). Batch size 8 for the baselines; batch size 2 with FP16 mixed precision for Prithvi-EO 2.0.
 
 ---
 
@@ -229,14 +231,13 @@ python -m http.server 8000
 If you use this code or data, please cite:
 
 ```bibtex
-@article{azeem2026parameter,
+@unpublished{azeem2026parameter,
   title={Parameter-Efficient Adaptation of an Earth Observation Foundation Model
          for Land Cover Mapping: Hybrid {LoRA} Fine-Tuning Evaluated on
          {Sentinel-2} Imagery in {Punjab}, {Pakistan}},
   author={Azeem, Muhammad Hamza},
-  journal={Computers \& Geosciences},
   year={2026},
-  note={Under review}
+  note={Manuscript}
 }
 ```
 
