@@ -1,4 +1,9 @@
 """
+SUPERSEDED (16 Nov 2026): this script normalised the composites without
+filling NaN, so every window touching the no-data border predicted class 0
+(Vegetation). Use evaluation/rerun_fullcity_fullcoverage.py, which produced
+the published Tables 3-6 and the change-detection maps.
+
 Re-run Prithvi inference with fix6 checkpoint on all cities/years.
 Updates: full-city eval (Table 3), per-class zero-shot (Table 4b),
 change detection (Table 5), and dry-season eval (Table 6).

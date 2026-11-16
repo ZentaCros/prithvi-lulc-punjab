@@ -33,10 +33,10 @@ This repository implements a parameter-efficient pipeline for adapting **NASA/IB
 | | Finding | Detail |
 |---|---------|--------|
 | 1 | **Prithvi leads on OA, mIoU and mF1** | +1.86 pp mIoU over the best baseline (mean of 3 seeds) |
-| 2 | **Best zero-shot transfer** | 58.31% mIoU on Gujranwala without retraining, +3.02 pp over the best baseline (seed 42) |
-| 3 | **LoRA is efficient** | Only 37.3% of parameters are trainable (120.1M of 321.6M) |
+| 2 | **Best zero-shot transfer** | 58.74% mIoU on Gujranwala without retraining, +3.08 pp over the best baseline (seed 42) |
+| 3 | **LoRA is efficient** | Only 37.6% of parameters are trainable (121.4M of 322.9M) |
 | 4 | **Runs on consumer hardware** | All training on a single RTX 4050 (6 GB VRAM) with FP16 mixed precision |
-| 5 | **Urbanization quantified** | +107.5 km2 built-up expansion in Lahore between 2018 and 2026 |
+| 5 | **Urbanization quantified** | +111.3 km2 built-up expansion in Lahore between 2018 and 2026 |
 
 ---
 
@@ -59,7 +59,7 @@ This repository implements a parameter-efficient pipeline for adapting **NASA/IB
 | U-Net | EfficientNet-B4 | 20M | 81.18 +/- 0.11 | 59.16 +/- 0.09 | 72.85 +/- 0.07 |
 | MiT-B2 + FPN | MiT-B2 | 26M | 80.61 +/- 0.15 | 59.07 +/- 0.09 | 72.73 +/- 0.04 |
 | DeepLabV3+ | ResNet-101 | 46M | 80.81 +/- 0.07 | 59.05 +/- 0.21 | 72.73 +/- 0.17 |
-| **Prithvi-EO 2.0** | **ViT + LoRA** | **321.6M** | **82.83 +/- 0.35** | **61.02 +/- 0.45** | **74.37 +/- 0.35** |
+| **Prithvi-EO 2.0** | **ViT + LoRA** | **322.9M** | **82.83 +/- 0.35** | **61.02 +/- 0.45** | **74.37 +/- 0.35** |
 
 Mean +/- sample standard deviation over 3 seeds.
 
@@ -67,19 +67,19 @@ Mean +/- sample standard deviation over 3 seeds.
 
 | Model | Lahore OA | Lahore mIoU | Gujranwala OA | Gujranwala mIoU |
 |:------|----------:|------------:|--------------:|----------------:|
-| U-Net | 82.27 | 59.26 | 90.47 | 55.29 |
-| DeepLabV3+ | 82.50 | 59.93 | 90.52 | 54.57 |
-| MiT-B2 + FPN | 82.25 | 59.35 | 90.48 | 54.71 |
-| **Prithvi-EO 2.0** | **84.55** | **62.02** | **91.31** | **58.31** |
+| U-Net | 82.46 | 59.39 | 90.74 | 55.66 |
+| DeepLabV3+ | 82.71 | 60.07 | 90.80 | 54.93 |
+| MiT-B2 + FPN | 82.46 | 59.50 | 90.77 | 55.10 |
+| **Prithvi-EO 2.0** | **84.77** | **62.18** | **91.61** | **58.74** |
 
 ### LoRA Rank Ablation
 
 | Rank | Trainable Params | Train % | mIoU (%) | OA (%) |
 |-----:|-----------------:|--------:|---------:|-------:|
-| 8 | 105.4M | 34.3% | 60.21 | 82.27 |
-| 16 | 107.5M | 34.8% | 60.52 | 82.65 |
-| 32 | 111.7M | 35.7% | 60.70 | 82.65 |
-| **64** | **120.1M** | **37.3%** | **61.24** | **82.90** |
+| 8 | 106.7M | 34.6% | 60.21 | 82.27 |
+| 16 | 108.8M | 35.1% | 60.52 | 82.65 |
+| 32 | 113.0M | 35.9% | 60.70 | 82.65 |
+| **64** | **121.4M** | **37.6%** | **61.24** | **82.90** |
 
 ---
 
@@ -203,7 +203,7 @@ python evaluation/significance_tests.py
 | U-Net | EfficientNet-B4 | 20M | 20M (100%) | Full fine-tune | SMP v0.6.0 |
 | DeepLabV3+ | ResNet-101 | 46M | 46M (100%) | Full fine-tune | SMP v0.6.0 |
 | MiT-B2 + FPN | MiT-B2 | 26M | 26M (100%) | Full fine-tune | SMP v0.6.0 |
-| Prithvi-EO 2.0 | ViT (24 blocks) | 321.6M | 120.1M (37.3%) | LoRA (r=64) + 8 unfrozen blocks | Terratorch + PEFT |
+| Prithvi-EO 2.0 | ViT (24 blocks) | 322.9M | 121.4M (37.6%) | LoRA (r=64) + 8 unfrozen blocks | Terratorch + PEFT |
 
 **Training config:** 50 epochs, AdamW optimizer, OneCycleLR scheduler, Dice + Focal loss (0.5 each). Batch size 8 for the baselines; batch size 2 with FP16 mixed precision for Prithvi-EO 2.0.
 

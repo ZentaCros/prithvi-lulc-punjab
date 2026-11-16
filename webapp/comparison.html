@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deforestation Analysis — LULC Punjab</title>
+    <title>Vegetation Change — LULC Punjab</title>
     <meta name="description" content="Side-by-side comparison of vegetation loss in Lahore and Gujranwala, Punjab (2018 vs 2026).">
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -280,7 +280,7 @@
                     </svg>
                 </div>
                 <div class="nav-title">
-                    <h1>Deforestation Analysis</h1>
+                    <h1>Vegetation Change</h1>
                     <span class="nav-subtitle">Side-by-side 2018 vs 2026 comparison</span>
                 </div>
             </div>
@@ -306,7 +306,7 @@
             <span class="control-label" style="margin-left: 16px;">Layer</span>
             <button class="layer-toggle active" id="defo-toggle">
                 <span class="dot"></span>
-                Deforestation Highlight
+                Vegetation Change Highlight
             </button>
 
             <span class="control-label" style="margin-left: 16px;">Map Opacity</span>
@@ -399,14 +399,15 @@
         }
     };
 
+    // Prithvi-EO 2.0 (fix6, seed 42), NaN pixels excluded, full window coverage; source: results/pipeline_fix6/web/vegetation_change_stats.json
     const DEFO_STATS = {
         lahore: {
-            veg_2018_px: 7932267, still_veg_px: 5708092, lost_px: 2224175, pct_lost: 28.0,
-            to_buildup: 636867, to_cropland: 1346194, to_water: 30675, to_barren: 210439,
+            veg_2018_px: 4661208, still_veg_px: 2160010, lost_px: 2501198, pct_lost: 53.7, net_km2: -21.4,
+            to_buildup: 621064, to_cropland: 1603688, to_water: 36194, to_barren: 240252,
         },
         gujranwala: {
-            veg_2018_px: 6162663, still_veg_px: 5356361, lost_px: 806302, pct_lost: 13.1,
-            to_buildup: 254520, to_cropland: 514832, to_water: 2798, to_barren: 34152,
+            veg_2018_px: 1842064, still_veg_px: 881192, lost_px: 960872, pct_lost: 52.2, net_km2: -15.4,
+            to_buildup: 266698, to_cropland: 642085, to_water: 6958, to_barren: 45131,
         },
     };
 
@@ -491,26 +492,26 @@
 
         document.getElementById("stat-veg-lost").innerHTML = `
             <div class="big-number loss">&minus;${(s.lost_px * PX_TO_KM2).toFixed(0)}</div>
-            <div class="stats-label">Vegetation Lost (km&sup2;)</div>
-            <div class="stats-detail">${(s.lost_px / 1e3).toFixed(0)}k pixels converted</div>
+            <div class="stats-label">2018 Vegetation Reclassified (km&sup2;)</div>
+            <div class="stats-detail">${(s.lost_px / 1e3).toFixed(0)}k pixels, gross</div>
         `;
 
         document.getElementById("stat-to-buildup").innerHTML = `
             <div class="big-number loss">${(s.to_buildup * PX_TO_KM2).toFixed(0)}</div>
-            <div class="stats-label">Converted to Built-up (km&sup2;)</div>
-            <div class="stats-detail">${((s.to_buildup / s.lost_px) * 100).toFixed(0)}% of total loss</div>
+            <div class="stats-label">Reclassified as Built-up (km&sup2;)</div>
+            <div class="stats-detail">${((s.to_buildup / s.lost_px) * 100).toFixed(0)}% of reclassified</div>
         `;
 
         document.getElementById("stat-to-cropland").innerHTML = `
             <div class="big-number" style="color: var(--gold)">${(s.to_cropland * PX_TO_KM2).toFixed(0)}</div>
-            <div class="stats-label">Converted to Cropland (km&sup2;)</div>
-            <div class="stats-detail">${((s.to_cropland / s.lost_px) * 100).toFixed(0)}% of total loss</div>
+            <div class="stats-label">Reclassified as Cropland (km&sup2;)</div>
+            <div class="stats-detail">${((s.to_cropland / s.lost_px) * 100).toFixed(0)}% of reclassified</div>
         `;
 
         document.getElementById("stat-pct-lost").innerHTML = `
             <div class="big-number loss">${s.pct_lost}%</div>
-            <div class="stats-label">Total Vegetation Loss</div>
-            <div class="stats-detail">2018 &rarr; 2026 (8 years)</div>
+            <div class="stats-label">Share of 2018 Vegetation Reclassified</div>
+            <div class="stats-detail">Gross, 2018 &rarr; 2026; net change ${s.net_km2} km&sup2;</div>
         `;
     }
 
